@@ -1,47 +1,53 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
 
-
+import tensorflow as tf
 import numpy as np
 import pandas as pd
-import pathlib
-import keras
-import matplotlib.pyplot as plt
-import os
-import datetime
-import tensorflow as tf 
-import tensorflow_datasets as tfds
+
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.layers import LSTM
+from keras.layers import RNN
+from keras.utils import np_utils
+from keras.callbacks import ModelCheckpoint
 
 
-DIRECTORY_URL = 'https://storage.googleapis.com/download.tensorflow.org/data/illiad/'
-FILE_NAMES = ['cowper.txt', 'derby.txt', 'butler.txt']
-
-for name in FILE_NAMES:
-	text_dir = tf.keras.utils.get_file(name, origin=DIRECTORY_URL+name)
-
-parent_dir = os.path.dirname(text_dir)
+text = (open("lotr.txt").read())
+text = text.lower()
 
 
-def labeler(example, index):
-	return example, tf.cast(index,tf.int64)
+characters = sorted(list(set(text)))
 
-labeled_data_sets = []
+n_to_char ={n:char for n, char in enumerate(characters)}
+char_to_n = {char:n for n, char in enumerate(characters)}
+
+vocab_size = len(characters)
+print('number of unique characters: ', vocab_size)
+print(characters)
 
 
-for i, file_name in enumerate(FILE_NAMES):
-	lines_dataset = tf.data.TextLineDataset(os.path.join(parent_dir, file_name))
-	labeled_dataset = lines_dataset.map(lambda ex: labeler(ex, i))
-	labeled_data_sets.append(labeled_dataset)
+x = []
+y = []
+length = len(text)
+seq_len = 100
 
-BUFFER_SIZE = 50000
-BATCH_SIZE = 64
-TAKE_SIZE = 5000
 
-all_labeled_data = labeled_data_sets[0]
-for labeled_dataset in labeled_data_sets[1:]:
-	all_labeled_data = all_labeled_data.concatenate(labeled_dataset)
+for i in range(0, length - seq_len, 1):
+	sequence = text[i:i + seq_len]
+	label = text[i + seq_len]
+	x.append([char_to_n[char] for char in sequence])
+	y.append(char_to_n[label])
 
-all_labeled_data = all_labeled_data.shuffle(
-	BUFFER_SIZE, reshuffle_each_iteration=False)
+x_mod = np.reshape(x, (len(x), seq_len, 1))
+x_mod = x_mod / float(len(characters))
+y_mod = np_utils.to_categorical(y)
 
-for ex in all_labeled_data.take(5):
-	print(ex)
+
+model = Sequential()
+model.add(LSTM(700, input_shape=(x_mod.shape[1],x_mod.shape[2]), return_sequences = True))
+model.add(Dropout(0.2))
+model.add(LSTM(700, return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(700))
+model.add(Dropout(0.2))
+model.add(Dense(y_mod.shape[1], activation='softmax'))
