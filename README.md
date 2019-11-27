@@ -1,7 +1,7 @@
 # rnn
 
 
-<b>Dataset(lotr.txt</b><br>
+<b>Dataset(lotr.txt)</b><br>
 </n>Text files of The Hobbit, The Lord of the Rings: Fellowship of the Ring, The Lord of the Rings: The Two Towers, and the Lord of the Rings: The Return of the King that were compiled into one large text file. I took the text from eBooks that I bought and ran through a program that extracted the text from the eBooks into text files.
   
 <b>Model(lotr.py)</b><br>
